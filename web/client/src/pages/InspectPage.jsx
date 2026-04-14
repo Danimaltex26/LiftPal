@@ -55,7 +55,8 @@ export default function InspectPage() {
     return (
       <div className="page stack">
         <div className="row-between">
-          <h1 style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>Inspection Result {model && <span style={{ fontSize: '0.6875rem', fontWeight: 400, color: '#6B6B73' }}>{model}</span>}</h1>
+          <h1>Inspection Result</h1>
+          {model && <div style={{ fontSize: '0.6875rem', color: '#6B6B73', marginTop: '0.25rem' }}>{model}</div>}
           <span className={'badge ' + (SEVERITY_COLORS[result.severity] || 'badge-gray')}>{result.severity}</span>
         </div>
         <div className="card"><p>{result.plain_english_summary || result.overall_diagnosis}</p></div>

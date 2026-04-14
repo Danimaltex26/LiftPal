@@ -94,7 +94,7 @@ export default function ReferencePage() {
                 <h3>{result.title || result.fiber_name || query}</h3>
                 <span className="badge badge-purple">{source}</span>
               </div>
-              {model && <div style={{ fontSize: '0.6875rem', color: '#6B6B73' }}>{model}</div>}
+              {model && <div style={{ fontSize: '0.6875rem', color: '#6B6B73', marginTop: '0.25rem' }}>{model}</div>}
 
               {result.content && result.content.summary && (
                 <p className="text-secondary" style={{ fontSize: '0.875rem' }}>{result.content.summary}</p>

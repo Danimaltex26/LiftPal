@@ -88,7 +88,8 @@ export default function TroubleshootPage() {
   if (result) {
     return (
       <div className="page stack">
-        <h1 style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>Diagnosis {model && <span style={{ fontSize: '0.6875rem', fontWeight: 400, color: '#6B6B73' }}>{model}</span>}</h1>
+        <h1>Diagnosis</h1>
+        {model && <div style={{ fontSize: '0.6875rem', color: '#6B6B73', marginTop: '0.25rem' }}>{model}</div>}
         <div className="card"><p>{result.plain_english_summary}</p></div>
 
         {result.probable_causes && result.probable_causes.length > 0 && (
