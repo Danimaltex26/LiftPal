@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { createClient } from "@supabase/supabase-js";
-import Anthropic from "@anthropic-ai/sdk";
 import multer from "multer";
 import auth from "../middleware/auth.js";
+import { callClaude } from "../utils/claudeClient.js";
 import { ANALYSIS_SYSTEM_PROMPT } from "../prompts/analysis.js";
 import { sendAnalysisReadyEmail } from "../utils/email.js";
 
@@ -19,8 +19,6 @@ const supabaseStorage = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
-
-const anthropic = new Anthropic();
 
 router.post("/", auth, upload.array("images", 4), async (req, res) => {
   try {
@@ -84,14 +82,12 @@ router.post("/", auth, upload.array("images", 4), async (req, res) => {
       text: "Analysis type hint: " + analysisType + ". Analyze the elevator/lift equipment in these photos.",
     });
 
-    var message = await anthropic.messages.create({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 4096,
-      system: ANALYSIS_SYSTEM_PROMPT,
+    var aiResult = await callClaude({
+      feature: 'photo_diagnosis',
+      systemPrompt: ANALYSIS_SYSTEM_PROMPT,
       messages: [{ role: "user", content: content }],
     });
-
-    var rawText = message.content[0].text;
+    var rawText = aiResult.content;
 
     // Parse JSON
     var result;

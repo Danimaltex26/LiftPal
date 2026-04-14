@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { createClient } from "@supabase/supabase-js";
-import Anthropic from "@anthropic-ai/sdk";
 import auth from "../middleware/auth.js";
+import { callClaude } from "../utils/claudeClient.js";
 import { TROUBLESHOOT_SYSTEM_PROMPT } from "../prompts/troubleshoot.js";
 
 const router = Router();
@@ -11,8 +11,6 @@ const supabaseService = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY,
   { db: { schema: "liftpal" } }
 );
-
-const anthropic = new Anthropic();
 
 router.post("/", auth, async (req, res) => {
   try {
@@ -78,14 +76,16 @@ router.post("/", auth, async (req, res) => {
     else if (conversation_history.length > 0) messages.push(...conversation_history);
     messages.push({ role: "user", content: userMessage });
 
-    var message = await anthropic.messages.create({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 4096,
-      system: TROUBLESHOOT_SYSTEM_PROMPT,
+    var aiResult = await callClaude({
+      feature: 'troubleshoot',
+      context: {
+        conversationHistory: existingHistory || [],
+        symptom: req.body.symptom || '',
+      },
+      systemPrompt: TROUBLESHOOT_SYSTEM_PROMPT,
       messages: messages,
     });
-
-    var rawText = message.content[0].text;
+    var rawText = aiResult.content;
 
     var result;
     try {

@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { createClient } from "@supabase/supabase-js";
-import Anthropic from "@anthropic-ai/sdk";
 import auth from "../middleware/auth.js";
 import { REFERENCE_SYSTEM_PROMPT } from "../prompts/reference.js";
+import { callClaude } from "../utils/claudeClient.js";
+import { requiresSpecificClause } from "../utils/modelRouter.js";
 
 const router = Router();
 
@@ -11,8 +12,6 @@ const supabaseService = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY,
   { db: { schema: "liftpal" } }
 );
-
-const anthropic = new Anthropic();
 
 router.post("/query", auth, async (req, res) => {
   try {
@@ -86,14 +85,13 @@ router.post("/query", auth, async (req, res) => {
       }
     }
 
-    var message = await anthropic.messages.create({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 4096,
-      system: REFERENCE_SYSTEM_PROMPT,
+    var feature = requiresSpecificClause(searchTerm) ? 'code_citation' : 'reference_lookup';
+    var aiResult = await callClaude({
+      feature: feature,
+      systemPrompt: REFERENCE_SYSTEM_PROMPT,
       messages: [{ role: "user", content: query }],
     });
-
-    var rawText = message.content[0].text;
+    var rawText = aiResult.content;
 
     var result;
     try {
