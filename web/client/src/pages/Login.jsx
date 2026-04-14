@@ -67,6 +67,10 @@ export default function Login() {
         <p className="text-center text-secondary" style={{ fontSize: '0.875rem' }}>
           Don't have an account? <Link to="/signup">Sign Up</Link>
         </p>
+
+        <a href="https://tradepals.net" target="_blank" rel="noopener noreferrer" style={{ display: 'block', textAlign: 'center', marginTop: '2rem', opacity: 0.5 }}>
+          <img src="https://tradepals.net/tradepals-logo.png" alt="TradePals" style={{ height: 28, display: 'inline-block' }} />
+        </a>
       </form>
     </div>
   );
