@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { apiUpload } from '../utils/api';
+import { compressImage } from '../utils/compressImage';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 var COMPONENT_TYPES = ['Auto-detect', 'Controller', 'Door Operator', 'Motor/Drive', 'Governor', 'Safety Device', 'Guide Rails', 'Car Top', 'Pit', 'Hoistway', 'Ropes/Belts', 'Escalator'];
@@ -35,7 +36,10 @@ export default function InspectPage() {
     setResult(null);
     try {
       var formData = new FormData();
-      files.forEach(function (f) { formData.append('images', f); });
+      for (var i = 0; i < files.length; i++) {
+        var compressed = await compressImage(files[i]);
+        formData.append('images', compressed);
+      }
       if (analysisType !== 'Auto-detect') formData.append('analysis_type', analysisType.toLowerCase().replace(/[\s/]/g, '_'));
       var data = await apiUpload('/analysis', formData);
       setResult(data.result);
