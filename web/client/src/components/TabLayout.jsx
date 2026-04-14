@@ -1,4 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { apiGet } from '../utils/api';
 
 var ACTIVE_COLOR = '#A855F7';
 
@@ -43,6 +45,7 @@ var tabs = [
   {
     to: '/training',
     label: 'Train',
+    requiresPro: true,
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
@@ -62,6 +65,16 @@ var tabs = [
 ];
 
 export default function TabLayout() {
+  var _s = useState(false);
+  var isPro = _s[0];
+  var setIsPro = _s[1];
+
+  useEffect(function () {
+    apiGet('/profile').then(function (data) {
+      setIsPro(data.subscription_tier === 'pro');
+    }).catch(function () {});
+  }, []);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh' }}>
       <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.75rem 1rem', borderBottom: '1px solid #2A2A2E' }}>
@@ -71,7 +84,7 @@ export default function TabLayout() {
         <Outlet />
       </div>
       <nav className="tab-bar" aria-label="Main navigation">
-        {tabs.map(function (tab) {
+        {tabs.filter(function (tab) { return !tab.requiresPro || isPro; }).map(function (tab) {
           return (
             <NavLink
               key={tab.to}
