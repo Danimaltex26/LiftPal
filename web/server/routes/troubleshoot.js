@@ -115,7 +115,7 @@ router.post("/", auth, async (req, res) => {
         .eq("id", session_id)
         .select()
         .single();
-      if (updateError) return res.json({ result, session_id: session_id, saved: false });
+      if (updateError) return res.json({ result, session_id: session_id, saved: false, model: aiResult.model });
       savedSession = updated;
     } else {
       var { data: inserted, error: insertError } = await supabaseService
@@ -123,11 +123,11 @@ router.post("/", auth, async (req, res) => {
         .insert(sessionPayload)
         .select()
         .single();
-      if (insertError) return res.json({ result, saved: false });
+      if (insertError) return res.json({ result, saved: false, model: aiResult.model });
       savedSession = inserted;
     }
 
-    return res.json({ result, session_id: savedSession.id });
+    return res.json({ result, session_id: savedSession.id, model: aiResult.model });
   } catch (err) {
     console.error("Troubleshoot error:", err);
     return res.status(500).json({ error: "Internal server error" });

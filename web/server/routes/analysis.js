@@ -137,7 +137,7 @@ router.post("/", auth, upload.array("images", 4), async (req, res) => {
       analysisType: analysisType,
     }).catch(() => {});
 
-    return res.json({ result, record_id: record?.id });
+    return res.json({ result, record_id: record?.id, model: aiResult.model });
   } catch (err) {
     console.error("Analysis error:", err);
     return res.status(500).json({ error: "Internal server error" });

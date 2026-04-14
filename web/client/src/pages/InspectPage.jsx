@@ -20,6 +20,7 @@ export default function InspectPage() {
   var [analysisType, setAnalysisType] = useState('Auto-detect');
   var [loading, setLoading] = useState(false);
   var [result, setResult] = useState(null);
+  var [model, setModel] = useState('');
   var [error, setError] = useState('');
 
   function handleFiles(e) {
@@ -38,6 +39,7 @@ export default function InspectPage() {
       if (analysisType !== 'Auto-detect') formData.append('analysis_type', analysisType.toLowerCase().replace(/[\s/]/g, '_'));
       var data = await apiUpload('/analysis', formData);
       setResult(data.result);
+      setModel(data.model || '');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -45,7 +47,7 @@ export default function InspectPage() {
     }
   }
 
-  function handleReset() { setFiles([]); setResult(null); setError(''); setAnalysisType('Auto-detect'); }
+  function handleReset() { setFiles([]); setResult(null); setModel(''); setError(''); setAnalysisType('Auto-detect'); }
 
   if (loading) return <LoadingSpinner messages={LOADING_MESSAGES} />;
 
@@ -53,7 +55,7 @@ export default function InspectPage() {
     return (
       <div className="page stack">
         <div className="row-between">
-          <h1>Inspection Result</h1>
+          <h1 style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>Inspection Result {model && <span style={{ fontSize: '0.6875rem', fontWeight: 400, color: '#6B6B73' }}>{model}</span>}</h1>
           <span className={'badge ' + (SEVERITY_COLORS[result.severity] || 'badge-gray')}>{result.severity}</span>
         </div>
         <div className="card"><p>{result.plain_english_summary || result.overall_diagnosis}</p></div>

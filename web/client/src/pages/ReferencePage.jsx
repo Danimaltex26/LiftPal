@@ -18,6 +18,7 @@ export default function ReferencePage() {
   var [query, setQuery] = useState('');
   var [loading, setLoading] = useState(false);
   var [result, setResult] = useState(null);
+  var [model, setModel] = useState('');
   var [source, setSource] = useState('');
   var [error, setError] = useState('');
 
@@ -29,6 +30,7 @@ export default function ReferencePage() {
     try {
       var data = await apiPost('/reference/query', { query: query.trim() });
       setResult(data.result);
+      setModel(data.model || '');
       setSource(data.source);
     } catch (err) {
       setError(err.message);
@@ -92,6 +94,7 @@ export default function ReferencePage() {
                 <h3>{result.title || result.fiber_name || query}</h3>
                 <span className="badge badge-purple">{source}</span>
               </div>
+              {model && <div style={{ fontSize: '0.6875rem', color: '#6B6B73' }}>{model}</div>}
 
               {result.content && result.content.summary && (
                 <p className="text-secondary" style={{ fontSize: '0.875rem' }}>{result.content.summary}</p>

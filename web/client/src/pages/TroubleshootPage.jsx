@@ -39,6 +39,7 @@ export default function TroubleshootPage() {
   var [environment, setEnvironment] = useState('');
   var [loading, setLoading] = useState(false);
   var [result, setResult] = useState(null);
+  var [model, setModel] = useState('');
   var [sessionId, setSessionId] = useState(null);
   var [followUp, setFollowUp] = useState('');
   var [error, setError] = useState('');
@@ -56,6 +57,7 @@ export default function TroubleshootPage() {
         environment: environment,
       });
       setResult(data.result);
+      setModel(data.model || '');
       setSessionId(data.session_id);
     } catch (err) {
       setError(err.message);
@@ -70,6 +72,7 @@ export default function TroubleshootPage() {
     try {
       var data = await apiPost('/troubleshoot', { session_id: sessionId, follow_up: followUp });
       setResult(data.result);
+      setModel(data.model || '');
       setFollowUp('');
     } catch (err) {
       setError(err.message);
@@ -78,14 +81,14 @@ export default function TroubleshootPage() {
     }
   }
 
-  function handleReset() { setResult(null); setSessionId(null); setSymptom(''); setFollowUp(''); setError(''); }
+  function handleReset() { setResult(null); setModel(''); setSessionId(null); setSymptom(''); setFollowUp(''); setError(''); }
 
   if (loading) return <LoadingSpinner messages={LOADING_MESSAGES} />;
 
   if (result) {
     return (
       <div className="page stack">
-        <h1>Diagnosis</h1>
+        <h1 style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>Diagnosis {model && <span style={{ fontSize: '0.6875rem', fontWeight: 400, color: '#6B6B73' }}>{model}</span>}</h1>
         <div className="card"><p>{result.plain_english_summary}</p></div>
 
         {result.probable_causes && result.probable_causes.length > 0 && (
