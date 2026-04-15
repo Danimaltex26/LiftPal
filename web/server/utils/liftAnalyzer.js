@@ -83,7 +83,7 @@ export async function analyzeLiftPhoto(params) {
     userNotes
   });
 
-  // MODEL: claude-sonnet-4-6
+  // MODEL: claude-sonnet-4-20250514
   // Photo diagnosis always uses Sonnet — vision quality matters here.
   // temperature: 0.2 — consistent, precise safety-critical diagnosis
   // max_tokens: 1800 — machine room inspection with brake, rope, sheave,
@@ -98,7 +98,7 @@ export async function analyzeLiftPhoto(params) {
       attempt++;
 
       response = await anthropic.messages.create({
-        model: 'claude-sonnet-4-6',
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 1800,
         temperature: 0.2,
         system: LIFTPAL_SYSTEM_PROMPT,
