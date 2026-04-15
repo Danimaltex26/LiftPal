@@ -46,21 +46,60 @@ const SAFETY_KEYWORDS = [
   'fall', 'crush', 'entrap', 'interlock', 'governor',
 ];
 
+/**
+ * Determines complexity of a LiftPal troubleshoot request.
+ * Elevator troubleshoot is effectively always complex — public
+ * conveyance safety requires Sonnet's reasoning on every submission.
+ *
+ * Signals that escalate to Sonnet:
+ *   - Multi-turn conversation
+ *   - Fault code present (platform-specific controller knowledge)
+ *   - Safety circuit or safety device issue (always Sonnet)
+ *   - Door system (entrapment risk — always Sonnet)
+ *   - 480V systems (arc flash risk)
+ *   - Modernization (mixed old/new code compliance)
+ *   - 2+ already-tried steps (fault not clearing)
+ *   - Safety-critical keywords
+ *
+ * Haiku path preserved for architectural consistency only.
+ * In practice all elevator troubleshoot requests route to Sonnet.
+ */
 function classifyTroubleshoot(params) {
-  var {
+  const {
     conversationHistory = [],
     symptom = '',
-    requiresCodeCompliance = false,
-    isSpecialtyMaterial = false,
+    hasFaultCode = false,
+    isSafetyCircuitIssue = false,
+    isDoorSystem = false,
+    isHighVoltage = false,
+    isModernization = false,
+    alreadyTriedMultiple = false,
   } = params;
 
-  var symptomLower = symptom.toLowerCase();
-  var isSafetyCritical = SAFETY_KEYWORDS.some(function (kw) {
-    return symptomLower.includes(kw);
-  });
-  var isMultiTurn = conversationHistory.length > 0;
-  var isComplex = isMultiTurn || requiresCodeCompliance ||
-                  isSpecialtyMaterial || isSafetyCritical;
+  const safetyCriticalKeywords = [
+    'safety', 'circuit', 'entrap', 'stuck', 'door', 'fall',
+    'hoistway', 'pit', 'overspeed', 'governor', 'unintended',
+    'movement', 'brake', 'rope', 'hydraulic', 'relief',
+    'buffer', 'escalator', 'comb', 'passenger', 'injury',
+    'recall', 'fire service', 'smoke', 'flood', 'inspection',
+  ];
+
+  const isSafetyCritical = safetyCriticalKeywords.some(
+    kw => symptom.toLowerCase().includes(kw)
+  );
+
+  const isMultiTurn = conversationHistory.length > 0;
+
+  const isComplex = (
+    isMultiTurn          ||  // follow-up
+    hasFaultCode         ||  // platform-specific controller knowledge
+    isSafetyCircuitIssue ||  // safety circuit — no shortcuts
+    isDoorSystem         ||  // door = entrapment risk
+    isHighVoltage        ||  // 480V = arc flash
+    isModernization      ||  // mixed code compliance
+    alreadyTriedMultiple ||  // fault not clearing
+    isSafetyCritical         // safety keywords
+  );
 
   return isComplex ? 'complex_troubleshoot' : 'simple_troubleshoot';
 }
