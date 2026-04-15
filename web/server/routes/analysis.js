@@ -129,13 +129,15 @@ router.post("/", auth, upload.array("images", 4), async (req, res) => {
 
     if (insertError) console.error("DB insert error:", insertError);
 
-    // Fire-and-forget email
-    sendAnalysisReadyEmail({
-      to: req.user.email,
-      appKey: "liftpal",
-      displayName: req.profile.display_name,
-      analysisType: analysisType,
-    }).catch(() => {});
+    // Only send email for offline-queued analyses
+    if (req.body.queued) {
+      sendAnalysisReadyEmail({
+        to: req.user.email,
+        appKey: "liftpal",
+        displayName: req.profile.display_name,
+        analysisType: analysisType,
+      }).catch(() => {});
+    }
 
     return res.json({ result, record_id: record?.id, model: aiResult.model });
   } catch (err) {
