@@ -2,9 +2,8 @@ import { Router } from "express";
 import { createClient } from "@supabase/supabase-js";
 import multer from "multer";
 import auth from "../middleware/auth.js";
-import { callClaude } from "../utils/claudeClient.js";
-import { ANALYSIS_SYSTEM_PROMPT } from "../prompts/analysis.js";
 import { sendAnalysisReadyEmail } from "../utils/email.js";
+import { analyzeLiftPhoto } from "../utils/liftAnalyzer.js";
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -64,52 +63,31 @@ router.post("/", auth, upload.array("images", 4), async (req, res) => {
       imageUrls.push(urlData.publicUrl);
     }
 
-    // Build Claude message with images
-    var content = [];
-    for (var j = 0; j < req.files.length; j++) {
-      var f = req.files[j];
-      content.push({
-        type: "image",
-        source: {
-          type: "base64",
-          media_type: f.mimetype,
-          data: f.buffer.toString("base64"),
-        },
-      });
-    }
-    content.push({
-      type: "text",
-      text: "Analysis type hint: " + analysisType + ". Analyze the elevator/lift equipment in these photos.",
-    });
-
-    var aiResult = await callClaude({
-      feature: 'photo_diagnosis',
-      systemPrompt: ANALYSIS_SYSTEM_PROMPT,
-      messages: [{ role: "user", content: content }],
-    });
-    var rawText = aiResult.content;
-
-    // Parse JSON
-    var result;
+    // CLAUDE API CALL: lift photo analysis — see /server/utils/liftAnalyzer.js
+    var analysisResult;
     try {
-      var stripped = rawText.replace(/^```(?:json)?\s*\n?/i, "").replace(/\n?```\s*$/i, "").trim();
-      result = JSON.parse(stripped);
-    } catch {
-      try {
-        var start = stripped.indexOf("{");
-        var depth = 0;
-        var end = start;
-        for (var k = start; k < stripped.length; k++) {
-          if (stripped[k] === "{") depth++;
-          if (stripped[k] === "}") depth--;
-          if (depth === 0) { end = k + 1; break; }
-        }
-        result = JSON.parse(stripped.substring(start, end));
-      } catch (e2) {
-        console.error("Failed to parse Claude response:", rawText);
-        return res.status(500).json({ error: "Failed to parse analysis result", raw: rawText });
+      analysisResult = await analyzeLiftPhoto({
+        imageBase64: req.files[0].buffer.toString("base64"),
+        imageMediaType: req.files[0].mimetype || "image/jpeg",
+        analysisType: analysisType,
+        equipmentType: req.body.equipment_type,
+        manufacturer: req.body.manufacturer,
+        installationType: req.body.installation_type,
+        codeEdition: req.body.code_edition,
+        symptoms: req.body.symptoms,
+        userNotes: req.body.user_notes,
+        userId: userId,
+      });
+    } catch (error) {
+      if (error.type === 'api_error' || error.type === 'parse_error' || error.type === 'validation_error') {
+        return res.status(error.status || 500).json({
+          error: error.userMessage || 'Analysis failed. Please try again.'
+        });
       }
+      throw error;
     }
+
+    var result = analysisResult.analysis;
 
     // Save to DB
     var { data: record, error: insertError } = await supabaseService
@@ -117,11 +95,11 @@ router.post("/", auth, upload.array("images", 4), async (req, res) => {
       .insert({
         user_id: userId,
         image_urls: imageUrls,
-        analysis_type: analysisType,
-        diagnosis: result.overall_diagnosis || result.plain_english_summary,
-        recommended_action: result.recommended_action,
+        analysis_type: result.analysis_type || analysisType,
+        diagnosis: result.assessment_reasoning || result.overall_assessment,
+        recommended_action: result.prioritized_actions && result.prioritized_actions[0] ? result.prioritized_actions[0].action : null,
         confidence: result.confidence,
-        severity: result.severity,
+        severity: result.overall_assessment,
         full_response_json: result,
       })
       .select("id")
@@ -135,11 +113,11 @@ router.post("/", auth, upload.array("images", 4), async (req, res) => {
         to: req.user.email,
         appKey: "liftpal",
         displayName: req.profile.display_name,
-        analysisType: analysisType,
+        analysisType: result.analysis_type || analysisType,
       }).catch(() => {});
     }
 
-    return res.json({ result, record_id: record?.id, model: aiResult.model });
+    return res.json({ result, record_id: record?.id, model: analysisResult.model });
   } catch (err) {
     console.error("Analysis error:", err);
     return res.status(500).json({ error: "Internal server error" });
