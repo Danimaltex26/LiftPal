@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { apiUpload } from '../utils/api';
 import { compressImage } from '../utils/compressImage';
 import LoadingSpinner from '../components/LoadingSpinner';
+import OfflineQueue from '../components/OfflineQueue';
+import useOfflineQueue from '../hooks/useOfflineQueue';
 
 var COMPONENT_TYPES = ['Auto-detect', 'Controller', 'Door Operator', 'Motor/Drive', 'Governor', 'Safety Device', 'Guide Rails', 'Car Top', 'Pit', 'Hoistway', 'Ropes/Belts', 'Escalator'];
 
@@ -23,6 +25,8 @@ export default function InspectPage() {
   var [result, setResult] = useState(null);
   var [model, setModel] = useState('');
   var [error, setError] = useState('');
+  var [queued, setQueued] = useState(false);
+  var offlineQueue = useOfflineQueue();
 
   function handleFiles(e) {
     var selected = Array.from(e.target.files || []).slice(0, 4);
@@ -32,26 +36,53 @@ export default function InspectPage() {
   async function handleSubmit() {
     if (files.length === 0) { setError('Select at least one photo'); return; }
     setError('');
-    setLoading(true);
     setResult(null);
+    setQueued(false);
+
+    var typeValue = analysisType !== 'Auto-detect' ? analysisType.toLowerCase().replace(/[\s/]/g, '_') : '';
+
+    // If offline, queue it
+    if (!navigator.onLine) {
+      await offlineQueue.enqueue(files, typeValue);
+      setQueued(true);
+      setFiles([]);
+      return;
+    }
+
+    // Online — upload directly
+    setLoading(true);
     try {
       var formData = new FormData();
       for (var i = 0; i < files.length; i++) {
         var compressed = await compressImage(files[i]);
         formData.append('images', compressed);
       }
-      if (analysisType !== 'Auto-detect') formData.append('analysis_type', analysisType.toLowerCase().replace(/[\s/]/g, '_'));
+      if (typeValue) formData.append('analysis_type', typeValue);
       var data = await apiUpload('/analysis', formData);
       setResult(data.result);
       setModel(data.model || '');
     } catch (err) {
-      setError(err.message);
+      // If upload fails (network dropped mid-request), queue it
+      if (!navigator.onLine || err.message?.includes('fetch') || err.message?.includes('network')) {
+        await offlineQueue.enqueue(files, typeValue);
+        setQueued(true);
+        setFiles([]);
+      } else {
+        setError(err.message);
+      }
     } finally {
       setLoading(false);
     }
   }
 
-  function handleReset() { setFiles([]); setResult(null); setModel(''); setError(''); setAnalysisType('Auto-detect'); }
+  function handleReset() { setFiles([]); setResult(null); setModel(''); setError(''); setQueued(false); setAnalysisType('Auto-detect'); }
+
+  function handleViewQueueResult(item) {
+    if (item.result) {
+      setResult(item.result);
+      offlineQueue.dismiss(item.id);
+    }
+  }
 
   if (loading) return <LoadingSpinner messages={LOADING_MESSAGES} />;
 
@@ -113,6 +144,20 @@ export default function InspectPage() {
       <h1>Equipment Inspection</h1>
       <p className="text-secondary">Upload 1-4 photos of elevator or lift equipment for AI-powered diagnosis.</p>
 
+      {/* Offline indicator */}
+      {!navigator.onLine && (
+        <div className="warning-box" style={{ fontSize: '0.875rem' }}>
+          You are offline. Photos will be queued and processed automatically when you reconnect.
+        </div>
+      )}
+
+      {/* Queued confirmation */}
+      {queued && (
+        <div className="info-box" style={{ fontSize: '0.875rem' }}>
+          Photo queued! It will be processed automatically when you're back online.
+        </div>
+      )}
+
       {error && <div className="error-banner">{error}</div>}
 
       <div className="form-group">
@@ -141,6 +186,16 @@ export default function InspectPage() {
       <button className="btn btn-primary btn-block" onClick={handleSubmit} disabled={files.length === 0}>
         Analyze Photos
       </button>
+
+      {/* Offline Queue */}
+      <OfflineQueue
+        queue={offlineQueue.queue}
+        processing={offlineQueue.processing}
+        onRetry={offlineQueue.retry}
+        onDismiss={offlineQueue.dismiss}
+        onViewResult={handleViewQueueResult}
+        onClearCompleted={offlineQueue.clearCompleted}
+      />
     </div>
   );
 }
