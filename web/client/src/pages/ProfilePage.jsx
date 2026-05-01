@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { apiGet, apiPatch } from '../utils/api';
 import LoadingSpinner from '../components/LoadingSpinner';
+import Paywall from '../components/Paywall';
 
 var EQUIPMENT_OPTIONS = ['Traction Geared', 'Traction Gearless', 'Hydraulic', 'MRL', 'Escalator', 'Moving Walk', 'Dumbwaiter', 'Freight', 'Residential'];
 var CERT_OPTIONS = ['CET (Certified Elevator Technician)', 'QEI (Qualified Elevator Inspector)', 'CAT (Certified Accessibility Technician)', 'OSHA 10', 'OSHA 30', 'Manufacturer Certified', 'Other'];
@@ -130,20 +131,18 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {tier === 'free' && (
-        <div className="card" style={{ textAlign: 'center', padding: '1.5rem' }}>
-          <h3 style={{ marginBottom: '0.5rem' }}>Upgrade to Pro</h3>
-          <p className="text-secondary" style={{ fontSize: '0.8125rem', marginBottom: '1rem' }}>
-            Unlimited photo analyses, troubleshoot sessions, AI reference lookups, full training content, and priority processing.
-          </p>
-          <a
-            href="https://tradepals.net/#pricing"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn btn-primary btn-block"
-          >
-            View Pro Plans
-          </a>
+      {tier === 'free' && <Paywall />}
+
+      {tier !== 'free' && (
+        <div className="card">
+          <div className="row-between" style={{ alignItems: 'center' }}>
+            <div>
+              <h3 style={{ margin: 0 }}>Subscription</h3>
+              <p className="text-secondary" style={{ fontSize: '0.875rem' }}>Unlimited analyses, troubleshooting, training, and reference lookups.</p>
+            </div>
+            <span className="badge badge-green">Pro</span>
+          </div>
+          <button className="btn btn-secondary btn-block" style={{ marginTop: '0.75rem' }} onClick={async () => { const { getManagementURL } = await import('../utils/revenuecat'); const url = await getManagementURL(); if (url) window.open(url, '_blank'); }}>Manage Subscription</button>
         </div>
       )}
 
