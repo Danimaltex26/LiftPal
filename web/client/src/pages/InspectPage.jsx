@@ -800,8 +800,7 @@ export default function InspectPage() {
 
       <div
         className="card"
-        style={{ border: '2px dashed #2A2A2E', textAlign: 'center', padding: '2rem 1rem', cursor: 'pointer' }}
-        onClick={function () { document.getElementById('file-input').click(); }}
+        style={{ border: '2px dashed #2A2A2E', textAlign: 'center', padding: '2rem 1rem' }}
         onDragOver={function (e) { e.preventDefault(); e.currentTarget.style.borderColor = '#A855F7'; }}
         onDragLeave={function (e) { e.currentTarget.style.borderColor = '#2A2A2E'; }}
         onDrop={function (e) { e.preventDefault(); e.currentTarget.style.borderColor = '#2A2A2E'; var dt = e.dataTransfer; if (dt.files) setFiles(Array.from(dt.files).slice(0, 4)); }}
@@ -809,9 +808,28 @@ export default function InspectPage() {
         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#A855F7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto 0.75rem' }}>
           <rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" />
         </svg>
-        <p className="text-secondary">{files.length > 0 ? files.length + ' photo(s) selected' : 'Tap to select or drag photos here'}</p>
+        <p className="text-secondary">{files.length > 0 ? files.length + ' photo(s) selected' : 'Add a photo to analyze'}</p>
         <p className="text-muted" style={{ fontSize: '0.75rem' }}>Up to 4 images</p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', justifyContent: 'center', marginTop: '0.75rem' }}>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={function () { document.getElementById('file-input-camera').click(); }}
+            style={{ backgroundColor: '#A855F7', color: '#ffffff', border: 'none', minWidth: 160 }}
+          >
+            📷 Take Photo
+          </button>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={function () { document.getElementById('file-input').click(); }}
+            style={{ minWidth: 180 }}
+          >
+            📁 Choose from Library
+          </button>
+        </div>
         <input id="file-input" type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleFiles} />
+        <input id="file-input-camera" type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handleFiles} />
       </div>
 
       <button className="btn btn-primary btn-block" onClick={handleSubmit} disabled={files.length === 0}>
