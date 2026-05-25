@@ -800,18 +800,44 @@ export default function InspectPage() {
 
       <div
         className="card"
-        style={{ border: '2px dashed #2A2A2E', textAlign: 'center', padding: '2rem 1rem', cursor: 'pointer' }}
+        style={{ position: 'relative', border: '2px dashed #2A2A2E', textAlign: 'center', padding: '2rem 1rem', cursor: 'pointer' }}
         onClick={function () { document.getElementById('file-input').click(); }}
         onDragOver={function (e) { e.preventDefault(); e.currentTarget.style.borderColor = '#A855F7'; }}
         onDragLeave={function (e) { e.currentTarget.style.borderColor = '#2A2A2E'; }}
         onDrop={function (e) { e.preventDefault(); e.currentTarget.style.borderColor = '#2A2A2E'; var dt = e.dataTransfer; if (dt.files) setFiles(Array.from(dt.files).slice(0, 4)); }}
       >
+        <button
+          type="button"
+          onClick={function (e) { e.preventDefault(); e.stopPropagation(); document.getElementById('file-input-camera').click(); }}
+          aria-label="Take photo with camera"
+          title="Take photo with camera"
+          style={{
+            position: 'absolute',
+            top: 12,
+            right: 12,
+            background: 'rgba(0,0,0,0.55)',
+            border: 'none',
+            borderRadius: 8,
+            padding: 8,
+            cursor: 'pointer',
+            color: '#ffffff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+            <circle cx="12" cy="13" r="4" />
+          </svg>
+        </button>
         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#A855F7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto 0.75rem' }}>
           <rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" />
         </svg>
         <p className="text-secondary">{files.length > 0 ? files.length + ' photo(s) selected' : 'Tap to select or drag photos here'}</p>
         <p className="text-muted" style={{ fontSize: '0.75rem' }}>Up to 4 images</p>
         <input id="file-input" type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleFiles} />
+        <input id="file-input-camera" type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handleFiles} />
       </div>
 
       <button className="btn btn-primary btn-block" onClick={handleSubmit} disabled={files.length === 0}>
